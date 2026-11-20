@@ -376,6 +376,12 @@ def extract_spec(data: dict[str, Any]) -> PresetSpec:
             sub_pp = _sub_plain_params(container, f"SubOsc{i}")
             raw_shape = _resolve(sub_pp, "kParamShape", schema.SUBOSC_PARAMS)
             kwargs["sub_shape"] = _reverse_sub_shapes.get(raw_shape, raw_shape)
+            kwargs["sub_initial_phase"] = _resolve(
+                sub_pp, "kParamInitialPhase", schema.SUBOSC_PARAMS
+            )
+            kwargs["sub_contiguous_phase"] = bool(
+                _resolve(sub_pp, "kParamContiguousPhase", schema.SUBOSC_PARAMS)
+            )
 
         # RoutingSlot0-4 -- this oscillator's own input routing choice (see
         # OscillatorSpec.filter_routing / mapping.apply_spec). Only extracted

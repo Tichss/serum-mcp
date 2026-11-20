@@ -493,8 +493,22 @@ class OscillatorSpec(BaseModel):
         "White", description="slot 3 (Noise) only, one of: White, Pink, Brown, Geiger"
     )
     sub_shape: str = Field(
-        "saw",
+        "sine",
         description=f"slot 4 (Sub) only, one of: {', '.join(sorted(SIMPLE_SUB_SHAPES))}",
+    )
+    sub_initial_phase: float = Field(
+        0.0,
+        ge=0.0,
+        le=360.0,
+        description="slot 4 (Sub) only: start phase in degrees (0-360) the Sub restarts "
+        "from on every note-on. Leave at 0 unless deliberately shaping the attack of a "
+        "sub layer (e.g. 90/270 starts a sine at its peak for a harder click).",
+    )
+    sub_contiguous_phase: bool = Field(
+        False,
+        description="slot 4 (Sub) only: True keeps the Sub's phase running across notes "
+        "instead of restarting at sub_initial_phase on every note-on (backed by "
+        "kParamContiguousPhase -- rare in real presets, exact behavior unconfirmed).",
     )
     filter_routing: Literal["filter", "master", "direct", "none"] | None = Field(
         None,

@@ -264,7 +264,7 @@ the WTOsc engine, not a faithfully reproduced one-shot.
 **Slots 3 and 4 are not the same engine family** — this is structural, not
 a modeling gap: slot 3 is *always* `NoiseOsc3` (white/pink/brown/geiger
 noise, `OscillatorSpec.noise_type`) and slot 4 is *always* `SubOsc4` (a
-single basic waveform — saw/square/triangle/pulse/round-rect,
+single basic waveform — sine (Serum's default, never written explicitly)/saw/square/triangle/pulse/round-rect,
 `OscillatorSpec.sub_shape`) in every preset we've seen; real Serum presets
 never have a `WTOsc3`/`WTOsc4` key. `table_position`/`warp_amount` are
 ignored by `apply_spec` for these two slots rather than being (wrongly)

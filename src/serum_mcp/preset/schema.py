@@ -3933,15 +3933,38 @@ SUBOSC_PARAMS: dict[str, ParamDef] = {
     "kParamShape": ParamDef(
         "kParamShape",
         "enum",
-        default="kSaw",
+        default="kSine",
         confidence="observed",
-        enum_values=("kSaw", "kSquare", "kTriangle", "kPulse", "kRoundRect"),
+        enum_values=("kSine", "kSaw", "kSquare", "kTriangle", "kPulse", "kRoundRect"),
+        notes="Serum's true default is Sine: a 629-preset factory survey (2026-11-20) "
+        "found kSaw/kSquare/kTriangle/kPulse/kRoundRect each written explicitly, but "
+        "never kSine -- the one shape omitted because it's the default. Absent = Sine.",
+    ),
+    "kParamInitialPhase": ParamDef(
+        "kParamInitialPhase",
+        "float",
+        default=0.0,
+        min=0.0,
+        max=360.0,
+        unit="degrees",
+        confidence="observed",
+        notes="Rare (2/629 factory presets: 130.3, 180.0).",
+    ),
+    "kParamContiguousPhase": ParamDef(
+        "kParamContiguousPhase",
+        "bool",
+        default=False,
+        confidence="uncertain",
+        notes="Rare (3/629 factory presets, always 1.0). Most likely free-running "
+        "phase -- the Sub keeps running across notes instead of restarting at "
+        "kParamInitialPhase on every note-on. Unconfirmed in real Serum.",
     ),
 }
 
 # Friendly names -> SUBOSC_PARAMS["kParamShape"] enum values, offered to
 # generation instead of the raw "kXxx" strings.
 SIMPLE_SUB_SHAPES: dict[str, str] = {
+    "sine": "kSine",
     "saw": "kSaw",
     "square": "kSquare",
     "triangle": "kTriangle",

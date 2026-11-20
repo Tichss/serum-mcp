@@ -1413,14 +1413,12 @@ def test_lfo_default_delay_rise_mono_swing_dotted_triplets_rate10x_omitted(init_
 
 
 def test_sub_osc_default_shape_omitted_not_written_explicitly(init_data):
-    """kParamShape (SubOsc4) -- found live 2026-07-30 isolating oscillators
-    solo on UN_PLACES_BA_Beyond: the Sub layer had harsh/piercing highs not
-    present in the real preset. Its real SubOsc4 has no kParamShape at all;
-    a real-corpus survey found this key absent in ALL 896 real SubOsc4
-    modules surveyed (0% presence -- the most extreme skew found this
-    session), yet `serum-mcp` always wrote the schema default ('saw',
-    harmonically bright) explicitly. Only an explicit non-default request
-    (e.g. 'square') should still write the key."""
+    """kParamShape (SubOsc4) -- Serum's true Sub default is Sine: a
+    629-preset factory survey (2026-11-20) found kSaw/kSquare/kTriangle/
+    kPulse/kRoundRect each written explicitly but never kSine, so an absent
+    key means Sine. The old 'saw' default was wrong both ways: writing it
+    explicitly gave harsh highs (UN_PLACES_BA_Beyond, 2026-07-30), and
+    omitting it for an explicit 'saw' request silently produced a Sine."""
     spec = PresetSpec(
         name="X",
         description="",
@@ -1429,7 +1427,7 @@ def test_sub_osc_default_shape_omitted_not_written_explicitly(init_data):
             OscillatorSpec(),
             OscillatorSpec(),
             OscillatorSpec(),
-            OscillatorSpec(enabled=True, sub_shape="saw"),
+            OscillatorSpec(enabled=True),
         ],
     )
     data = apply_spec(init_data, spec)
@@ -1438,22 +1436,24 @@ def test_sub_osc_default_shape_omitted_not_written_explicitly(init_data):
     assert "kParamShape" not in sp
 
     extracted = extract_spec(data)
-    assert extracted.oscillators[4].sub_shape == "saw"
+    assert extracted.oscillators[4].sub_shape == "sine"
 
-    spec2 = PresetSpec(
-        name="X",
-        description="",
-        oscillators=[
-            OscillatorSpec(),
-            OscillatorSpec(),
-            OscillatorSpec(),
-            OscillatorSpec(),
-            OscillatorSpec(enabled=True, sub_shape="square"),
-        ],
-    )
-    data2 = apply_spec(init_data, spec2)
-    sp2 = data2["Oscillator4"]["SubOsc4"]["plainParams"]
-    assert sp2["kParamShape"] == "kSquare"
+    for shape, raw in (("saw", "kSaw"), ("square", "kSquare")):
+        spec2 = PresetSpec(
+            name="X",
+            description="",
+            oscillators=[
+                OscillatorSpec(),
+                OscillatorSpec(),
+                OscillatorSpec(),
+                OscillatorSpec(),
+                OscillatorSpec(enabled=True, sub_shape=shape),
+            ],
+        )
+        data2 = apply_spec(init_data, spec2)
+        sp2 = data2["Oscillator4"]["SubOsc4"]["plainParams"]
+        assert sp2["kParamShape"] == raw
+        assert extract_spec(data2).oscillators[4].sub_shape == shape
 
 
 def test_oscillator_default_octave_pitch_fine_volume_pan_unison_detune_omitted(init_data):
@@ -3669,12 +3669,12 @@ def test_editing_a_value_back_to_its_default_resets_it(init_data, first, second,
     assert key not in plain_params
 
 
-def test_editing_sub_shape_back_to_saw_resets_it(init_data):
+def test_editing_sub_shape_back_to_sine_resets_it(init_data):
     def sub(shape: str) -> PresetSpec:
         oscillators = [OscillatorSpec() for _ in range(4)] + [OscillatorSpec(sub_shape=shape)]
         return PresetSpec(name="X", description="", oscillators=oscillators)
 
-    edited = apply_spec(apply_spec(init_data, sub("triangle")), sub("saw"))
+    edited = apply_spec(apply_spec(init_data, sub("triangle")), sub("sine"))
 
     assert "kParamShape" not in edited["Oscillator4"]["SubOsc4"]["plainParams"]
 
@@ -3696,3 +3696,24 @@ def test_writing_a_default_keeps_an_explicit_default_already_stored(init_data):
     edited = apply_spec(init_data, _osc_with(octave=0.0))
 
     assert edited["Oscillator0"]["plainParams"]["kParamOctave"] == 0.0
+
+
+def test_sub_phase_written_extracted_and_reset(init_data):
+    def sub(**kw) -> PresetSpec:
+        oscillators = [OscillatorSpec() for _ in range(4)] + [OscillatorSpec(enabled=True, **kw)]
+        return PresetSpec(name="X", description="", oscillators=oscillators)
+
+    data = apply_spec(init_data, sub(sub_initial_phase=180.0, sub_contiguous_phase=True))
+    sp = data["Oscillator4"]["SubOsc4"]["plainParams"]
+    assert sp["kParamInitialPhase"] == 180.0
+    assert sp["kParamContiguousPhase"] == 1.0
+    assert type(sp["kParamContiguousPhase"]) is float
+
+    extracted = extract_spec(data).oscillators[4]
+    assert extracted.sub_initial_phase == 180.0
+    assert extracted.sub_contiguous_phase is True
+
+    reset = apply_spec(data, sub())
+    sp = reset["Oscillator4"]["SubOsc4"]["plainParams"]
+    assert "kParamInitialPhase" not in sp
+    assert "kParamContiguousPhase" not in sp

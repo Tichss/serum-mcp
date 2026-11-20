@@ -1275,21 +1275,22 @@ def _merge_spec(
             )
         elif i == _SUB_SLOT:
             sub_params = _plain_params(osc_container, f"SubOsc{i}")
-            # Same presence-forces-the-DSP-stage pattern as VoiceFilter/LFO
-            # above, found live 2026-07-29 (UN_PLACES_BA_Beyond): a
-            # real-corpus survey found kParamShape absent in EVERY single
-            # one of 896 real SubOsc4 modules (0% presence, the most
-            # extreme skew found this session) -- Serum's Sub is
-            # essentially never touched away from its true default.
-            # Explicitly writing "saw" (this field's own schema default)
-            # gave the Sub layer harsh/piercing highs not present in the
-            # real (untouched) preset. Only write this key for a non-default
-            # shape; asking for saw removes a stored non-saw shape.
+            # Serum's true Sub default is Sine and an absent kParamShape
+            # means Sine -- see schema.SUBOSC_PARAMS["kParamShape"]. The old
+            # "saw" default here was wrong: writing it explicitly gave harsh
+            # highs (found live 2026-07-29, UN_PLACES_BA_Beyond), and omitting
+            # it for an explicit "saw" request silently produced a Sine. Only
+            # write the key for a non-Sine shape; asking for sine removes a
+            # stored shape.
             _write_unless_default(
                 sub_params,
                 "kParamShape",
                 schema.SIMPLE_SUB_SHAPES.get(osc.sub_shape, osc.sub_shape),
-                schema.SIMPLE_SUB_SHAPES["saw"],
+                schema.SIMPLE_SUB_SHAPES["sine"],
+            )
+            _write_unless_default(sub_params, "kParamInitialPhase", osc.sub_initial_phase, 0.0)
+            _write_unless_default(
+                sub_params, "kParamContiguousPhase", osc.sub_contiguous_phase, False
             )
             validate_params(f"SubOsc{i}", sub_params, schema.SUBOSC_PARAMS, allow_unknown=True)
         validate_params(f"Oscillator{i}", osc_params, schema.OSCILLATOR_PARAMS, allow_unknown=True)

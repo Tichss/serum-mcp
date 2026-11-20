@@ -68,6 +68,10 @@ def describe_preset(preset_path: str) -> str:
             extra = f"noise_type={osc.noise_type}"
         else:
             extra = f"sub_shape={osc.sub_shape}"
+            if osc.sub_initial_phase:
+                extra += f"  phase={osc.sub_initial_phase:.0f}°"
+            if osc.sub_contiguous_phase:
+                extra += "  contiguous_phase"
         lines.append(f"Osc {label}: {state}  {common}  {extra}")
 
     lines.append("")
